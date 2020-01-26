@@ -1,0 +1,83 @@
+{
+	"info": {
+		"_postman_id": "848bac51-98e3-4260-81bd-25ebb34320f7",
+		"name": "pento",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "session",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-user-uuid",
+						"value": "b38e6e7e-47c3-4256-ab7e-e513ba13ccdf",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\": \"first task\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://0.0.0.0:8011/v1/session",
+					"protocol": "http",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8011",
+					"path": [
+						"v1",
+						"session"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "session state",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-user-uuid",
+						"value": "b38e6e7e-47c3-4256-ab7e-e513ba13ccdf",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://0.0.0.0:8011/v1/session",
+					"protocol": "http",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8011",
+					"path": [
+						"v1",
+						"session"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
