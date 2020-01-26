@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  pstgrsql:
+    container_name: pstgrsql
+    image: postgres:9.6-alpine
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "root" ]
+      timeout: 50s
+      interval: 20s
+      retries: 3
+    restart: always
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=password
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
