@@ -6,9 +6,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
+	"github.com/gorilla/mux"
 	"github.com/reposandermets/tech-challenge-time/api/models"
 )
 
@@ -17,6 +19,8 @@ type sessionController struct{}
 type sessionControllerInterface interface {
 	ListSession(w http.ResponseWriter, r *http.Request)
 	PostSession(w http.ResponseWriter, r *http.Request)
+	PutSessionByID(w http.ResponseWriter, r *http.Request)
+	PutSessionBySessionID(w http.ResponseWriter, r *http.Request)
 }
 
 var (
@@ -29,20 +33,8 @@ func init() {
 }
 
 func (s *sessionController) ListSession(w http.ResponseWriter, r *http.Request) {
-	userID, err := uuid.Parse(r.Header.Get("x-user-uuid"))
-	if err != nil {
-		http.Error(w, http.StatusText(400), 400)
-		log.Println("invalid header x-user-id")
-		return
-	}
-
-	dbRaw, ok := context.GetOk(r, "db")
-	db := dbRaw.(*sql.DB)
-	if !ok {
-		log.Println("could not get database connection pool from context")
-		http.Error(w, "please retry", 500)
-		return
-	}
+	userID := context.Get(r, "userID").(string)
+	db := context.Get(r, "db").(*sql.DB)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	// active tracking
@@ -66,7 +58,7 @@ func (s *sessionController) ListSession(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// ongoing session
-	timeSessions, err = models.ReadOngoingSession(db, userID.String())
+	timeSessions, err = models.ReadOngoingSession(db, userID)
 	if err != nil {
 		http.Error(w, http.StatusText(400), 400)
 		log.Println("db read error", err.Error())
@@ -92,20 +84,8 @@ func (s *sessionController) ListSession(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *sessionController) PostSession(w http.ResponseWriter, r *http.Request) {
-	userID, err := uuid.Parse(r.Header.Get("x-user-uuid"))
-	if err != nil {
-		http.Error(w, http.StatusText(400), 400)
-		log.Println("invalid header x-user-id")
-		return
-	}
-
-	dbRaw, ok := context.GetOk(r, "db")
-	db := dbRaw.(*sql.DB)
-	if !ok {
-		log.Println("could not get database connection pool from context")
-		http.Error(w, "please retry", 500)
-		return
-	}
+	userID := context.Get(r, "userID").(string)
+	db := context.Get(r, "db").(*sql.DB)
 
 	var session models.TimeSession
 	sessionBytes, err := ioutil.ReadAll(r.Body)
@@ -122,7 +102,7 @@ func (s *sessionController) PostSession(w http.ResponseWriter, r *http.Request) 
 	}
 	sessionPartialID, err := uuid.NewRandom()
 
-	name := "My task"
+	name := "My task started " + time.Now().Format(time.RFC850)
 	if session.TimeSessionName.String != "" {
 		name = session.TimeSessionName.String
 	}
@@ -130,21 +110,81 @@ func (s *sessionController) PostSession(w http.ResponseWriter, r *http.Request) 
 	sessionIDString := sessionID.String()
 	if session.TimeSessionID != "" {
 		sessionIDString = session.TimeSessionID
-		timeSessions, _ := models.ReadBySessionID(db, sessionIDString, userID.String())
+		timeSessions, _ := models.ReadBySessionID(db, sessionIDString, userID)
 		if len(timeSessions) < 1 {
 			http.Error(w, http.StatusText(400), 400)
 			log.Println(err.Error())
 			return
 		}
+		name = timeSessions[0].TimeSessionName.String
 	}
 
-	// no active sessions nor ongoing tracking
-	timeSessions, err := models.WriteStartSession(db, sessionPartialID.String(), name, sessionIDString, userID.String())
+	timeSessions, err := models.WriteStartSession(db, sessionPartialID.String(), name, sessionIDString, userID)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		log.Println(err.Error())
 		return
 	}
+	b, err := json.Marshal(timeSessions)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		log.Println("marshal error", err.Error())
+		return
+	}
+	w.WriteHeader(200)
+	w.Write(b)
+	return
+}
+
+func (s *sessionController) PutSessionByID(w http.ResponseWriter, r *http.Request) {
+	userID := context.Get(r, "userID").(string)
+	db := context.Get(r, "db").(*sql.DB)
+	vars := mux.Vars(r)
+	_, err := uuid.Parse(vars["id"])
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		log.Println(err.Error())
+		return
+	}
+
+	timeSessions, err := models.WriteStopSession(db, vars["id"], userID)
+
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		log.Println(err.Error())
+		return
+	}
+
+	b, err := json.Marshal(timeSessions)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		log.Println("marshal error", err.Error())
+		return
+	}
+	w.WriteHeader(200)
+	w.Write(b)
+	return
+}
+
+func (s *sessionController) PutSessionBySessionID(w http.ResponseWriter, r *http.Request) {
+	userID := context.Get(r, "userID").(string)
+	db := context.Get(r, "db").(*sql.DB)
+	vars := mux.Vars(r)
+	_, err := uuid.Parse(vars["session_id"])
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		log.Println(err.Error())
+		return
+	}
+
+	timeSessions, err := models.WriteEndSession(db, vars["session_id"], userID)
+
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		log.Println(err.Error())
+		return
+	}
+
 	b, err := json.Marshal(timeSessions)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)

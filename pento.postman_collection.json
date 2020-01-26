@@ -6,7 +6,7 @@
 	},
 	"item": [
 		{
-			"name": "session",
+			"name": "start session",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -32,7 +32,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://0.0.0.0:8011/v1/session",
+					"raw": "http://0.0.0.0:8011/v1/session-start",
 					"protocol": "http",
 					"host": [
 						"0",
@@ -43,14 +43,14 @@
 					"port": "8011",
 					"path": [
 						"v1",
-						"session"
+						"session-start"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "session state",
+			"name": "fetch session state",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -61,7 +61,7 @@
 					}
 				],
 				"url": {
-					"raw": "http://0.0.0.0:8011/v1/session",
+					"raw": "http://0.0.0.0:8011/v1/session-status",
 					"protocol": "http",
 					"host": [
 						"0",
@@ -72,7 +72,67 @@
 					"port": "8011",
 					"path": [
 						"v1",
-						"session"
+						"session-status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "stop session",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "x-user-uuid",
+						"type": "text",
+						"value": "b38e6e7e-47c3-4256-ab7e-e513ba13ccdf"
+					}
+				],
+				"url": {
+					"raw": "http://0.0.0.0:8011/v1/session-stop/{{time_session_partial_id}}",
+					"protocol": "http",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8011",
+					"path": [
+						"v1",
+						"session-stop",
+						"{{time_session_partial_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "end session",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "x-user-uuid",
+						"type": "text",
+						"value": "b38e6e7e-47c3-4256-ab7e-e513ba13ccdf"
+					}
+				],
+				"url": {
+					"raw": "http://0.0.0.0:8011/v1/session-end/{{time_session_id}}",
+					"protocol": "http",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8011",
+					"path": [
+						"v1",
+						"session-end",
+						"{{time_session_id}}"
 					]
 				}
 			},

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/context"
 
 	"github.com/gorilla/mux"
@@ -18,6 +19,13 @@ func loggingAndContext(db *sql.DB, f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		context.Set(r, "db", db)
 		log.Println(r.URL.Path)
+		userID, err := uuid.Parse(r.Header.Get("x-user-uuid"))
+		if err != nil {
+			http.Error(w, http.StatusText(400), 400)
+			log.Println("invalid header x-user-id")
+			return
+		}
+		context.Set(r, "userID", userID.String())
 		f(w, r)
 	}
 }
@@ -32,8 +40,10 @@ func Boot() {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/v1/session", loggingAndContext(db, controllers.SessionController.ListSession)).Methods("GET")
-	router.HandleFunc("/v1/session", loggingAndContext(db, controllers.SessionController.PostSession)).Methods("POST")
+	router.HandleFunc("/v1/session-status", loggingAndContext(db, controllers.SessionController.ListSession)).Methods("GET")
+	router.HandleFunc("/v1/session-start", loggingAndContext(db, controllers.SessionController.PostSession)).Methods("POST")
+	router.HandleFunc("/v1/session-stop/{id}", loggingAndContext(db, controllers.SessionController.PutSessionByID)).Methods("PUT")
+	router.HandleFunc("/v1/session-end/{session_id}", loggingAndContext(db, controllers.SessionController.PutSessionBySessionID)).Methods("PUT")
 
 	server := &http.Server{
 		Handler:      router,
