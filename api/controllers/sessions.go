@@ -38,7 +38,7 @@ func (s *sessionController) ListSession(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	// active tracking
-	timeSessions, err := models.ReadOngoingTracking(db, userID.String())
+	timeSessions, err := models.ReadOngoingTracking(db, userID)
 	if err != nil {
 		http.Error(w, http.StatusText(400), 400)
 		log.Println("db read error", err.Error())

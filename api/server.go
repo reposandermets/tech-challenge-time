@@ -2,12 +2,12 @@ package api
 
 import (
 	"database/sql"
+	"github.com/google/uuid"
+	"github.com/gorilla/context"
+	"github.com/gorilla/handlers"
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/google/uuid"
-	"github.com/gorilla/context"
 
 	"github.com/gorilla/mux"
 	"github.com/reposandermets/tech-challenge-time/api/config"
@@ -46,7 +46,10 @@ func Boot() {
 	router.HandleFunc("/v1/session-end/{session_id}", loggingAndContext(db, controllers.SessionController.PutSessionBySessionID)).Methods("PUT")
 
 	server := &http.Server{
-		Handler:      router,
+		Handler: handlers.CORS(
+			handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization", "x-user-uuid"}),
+			handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"}),
+			handlers.AllowedOrigins([]string{"*"}))(router),
 		Addr:         config.AppAddress,
 		WriteTimeout: 30 * time.Second,
 		ReadTimeout:  30 * time.Second,

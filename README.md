@@ -77,3 +77,4 @@ Row count equals or is greater than 1 for `time_session_completed IS NULL AND ti
 ### Application level restriction
 
 Before creating new session ongoing tracking should be stopped
+App's state should support timezones
