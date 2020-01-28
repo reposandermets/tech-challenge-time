@@ -24,5 +24,57 @@ You can fork this repo and use the fork as a basis for your project. We don't ha
 
 ## Notes
 
- - This is technically possible to implement only on the frontend, but please take the opportunity to show your skills on the entire stack 
- - Please focus more on code quality, building a robust service and such, than on the UI.
+- This is technically possible to implement only on the frontend, but please take the opportunity to show your skills on the entire stack 
+- Please focus more on code quality, building a robust service and such, than on the UI.
+
+## Implementation details
+
+Using Postgres as datastore
+User will be presented by uuid
+
+## Logic
+
+Main domain logic will be described by datastore structure.
+
+Using Postgres and single table.
+
+Attempting to:
+
+1. Avoid expensive JOIN
+2. Possibility to migrate into NoSQL with ease if there would be future change in datastore engine
+3. Multitenant system, using `user_id` i.e. eventually more than one user shoud be able to use the app
+
+```sql
+CREATE TABLE public.time_session_partial
+(
+    time_session_partial_id uuid NOT NULL,
+    time_session_name character varying(128) COLLATE pg_catalog."default" NOT NULL,
+    time_session_partial_start timestamp with time zone NOT NULL,
+    time_session_partial_end timestamp with time zone,
+    time_session_id uuid NOT NULL,
+    time_session_completed boolean,
+    user_id uuid NOT NULL,
+    CONSTRAINT time_session_partial_pkey PRIMARY KEY (time_session_partial_id)
+)
+```
+
+Session consists of completed `time_session_partial_id` rows.
+
+### Criterias
+
+#### New session start (state completed)
+
+Row count equals 0 for `time_session_completed IS NULL AND user_id = $1`
+
+#### Session is being tracked (state active)
+
+Row count equals 1 for `time_session_partial_end IS NULL AND user_id = $1`
+
+#### Continue stopped session (state incomplete)
+
+Row count equals or is greater than 1 for `time_session_completed IS NULL AND time_session_partial_end IS NOT NULL AND user_id = $1`
+
+### Application level restriction
+
+Before creating new session ongoing tracking should be stopped
+App's state should support timezones
